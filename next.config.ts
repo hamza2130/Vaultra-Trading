@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    serverActions: {
+      // KYC document / payment proof screenshots can exceed the 1MB default.
+      bodySizeLimit: "8mb",
+    },
+  },
 };
 
 export default nextConfig;

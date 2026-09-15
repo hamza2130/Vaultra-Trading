@@ -1,26 +1,106 @@
 @import "tailwindcss";
 
+/* ---------- design tokens, ported from the Vaultra prototype ---------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bg: #f4f6f7;
+  --surface: #ffffff;
+  --surface-2: #fbfcfc;
+  --raised: #ffffff;
+  --border: #e2e7e9;
+  --border-soft: #ebeff0;
+  --text: #131a1e;
+  --text-dim: #5b6b72;
+  --text-faint: #8e9ca3;
+  --accent: #0e9f6e;
+  --accent-ink: #046b49;
+  --accent-soft: #dff3ea;
+  --pos: #0cae71;
+  --pos-soft: #e4f7ee;
+  --neg: #e5484d;
+  --neg-soft: #fce7e8;
+  --warn: #ad7a17;
+  --warn-soft: #fbf0da;
+  --info: #2c6ecb;
+  --info-soft: #e5eefc;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --bg: #0a0d0f;
+    --surface: #12171a;
+    --surface-2: #161c20;
+    --raised: #1a2125;
+    --border: #242d31;
+    --border-soft: #1d2528;
+    --text: #ebeff0;
+    --text-dim: #93a2a9;
+    --text-faint: #5e6c72;
+    --accent: #22da92;
+    --accent-ink: #7cf0be;
+    --accent-soft: rgba(34, 218, 146, 0.12);
+    --pos: #22da92;
+    --pos-soft: rgba(34, 218, 146, 0.12);
+    --neg: #ff5d63;
+    --neg-soft: rgba(255, 93, 99, 0.13);
+    --warn: #f0b94d;
+    --warn-soft: rgba(240, 185, 77, 0.13);
+    --info: #5b9bf6;
+    --info-soft: rgba(91, 155, 246, 0.13);
   }
 }
 
+:root[data-theme="dark"] {
+  --bg: #0a0d0f;
+  --surface: #12171a;
+  --surface-2: #161c20;
+  --raised: #1a2125;
+  --border: #242d31;
+  --border-soft: #1d2528;
+  --text: #ebeff0;
+  --text-dim: #93a2a9;
+  --text-faint: #5e6c72;
+  --accent: #22da92;
+  --accent-ink: #7cf0be;
+  --accent-soft: rgba(34, 218, 146, 0.12);
+  --pos: #22da92;
+  --pos-soft: rgba(34, 218, 146, 0.12);
+  --neg: #ff5d63;
+  --neg-soft: rgba(255, 93, 99, 0.13);
+  --warn: #f0b94d;
+  --warn-soft: rgba(240, 185, 77, 0.13);
+  --info: #5b9bf6;
+  --info-soft: rgba(91, 155, 246, 0.13);
+}
+
+/* ---------- expose tokens to Tailwind utilities ---------- */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-raised: var(--raised);
+  --color-border: var(--border);
+  --color-border-soft: var(--border-soft);
+  --color-text: var(--text);
+  --color-text-dim: var(--text-dim);
+  --color-text-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-pos: var(--pos);
+  --color-pos-soft: var(--pos-soft);
+  --color-neg: var(--neg);
+  --color-neg-soft: var(--neg-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  --font-display: var(--font-manrope);
+  --font-body: var(--font-public-sans);
+  --font-mono: var(--font-jetbrains-mono);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
 }
