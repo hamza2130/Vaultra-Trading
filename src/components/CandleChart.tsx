@@ -9,7 +9,7 @@ import {
   type UTCTimestamp,
 } from "lightweight-charts";
 import { useEffect, useRef, useState } from "react";
-import type { Candle, Timeframe } from "@/lib/market";
+import { priceDecimals, type Candle, type Timeframe } from "@/lib/market";
 
 const POLL_MS = 5000;
 
@@ -23,10 +23,6 @@ function themeColors() {
     up: v("--pos"),
     down: v("--neg"),
   };
-}
-
-function precisionFor(price: number) {
-  return price >= 10 ? 2 : 4;
 }
 
 function toBar(c: Candle) {
@@ -117,7 +113,7 @@ export function CandleChart({
     function apply(candles: Candle[]) {
       if (!series || !chart || candles.length === 0) return;
       const last = candles[candles.length - 1];
-      const precision = precisionFor(last.close);
+      const precision = priceDecimals(last.close);
       series.applyOptions({
         priceFormat: { type: "price", precision, minMove: 1 / 10 ** precision },
       });

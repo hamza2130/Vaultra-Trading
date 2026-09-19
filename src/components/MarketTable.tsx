@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { formatPrice, formatVolume, type Ticker } from "@/lib/market";
+import { coinColor, coinName, formatPrice, formatVolume, type Ticker } from "@/lib/market";
 
 const POLL_MS = 5000;
+const PAGE_SIZE = 50;
+const HOT_COUNT = 30;
+
 type Filter = "all" | "gainers" | "losers" | "hot";
 const FILTERS: { key: Filter; label: string }[] = [
   { key: "all", label: "All" },
@@ -24,6 +27,7 @@ export function MarketTable({
   const [live, setLive] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
+  const [limit, setLimit] = useState(PAGE_SIZE);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,20 +51,27 @@ export function MarketTable({
     };
   }, []);
 
-  const rows = useMemo(() => {
-    let list = [...tickers];
+  // The full list, before paging. Tickers arrive sorted by 24h volume.
+  const matches = useMemo(() => {
+    let list = tickers;
     if (mode === "home") {
       const q = query.trim().toLowerCase();
-      if (q) list = list.filter((t) => t.name.toLowerCase().includes(q) || t.symbol.toLowerCase().includes(q));
+      if (q) {
+        list = list.filter(
+          (t) => t.symbol.toLowerCase().includes(q) || coinName(t.symbol).toLowerCase().includes(q),
+        );
+      }
     } else if (filter === "gainers") {
       list = list.filter((t) => t.changePct > 0).sort((a, b) => b.changePct - a.changePct);
     } else if (filter === "losers") {
       list = list.filter((t) => t.changePct < 0).sort((a, b) => a.changePct - b.changePct);
     } else if (filter === "hot") {
-      list = list.sort((a, b) => b.volume - a.volume);
+      list = [...list].sort((a, b) => b.trades - a.trades).slice(0, HOT_COUNT);
     }
     return list;
   }, [tickers, mode, filter, query]);
+
+  const rows = matches.slice(0, limit);
 
   return (
     <div>
@@ -70,7 +81,10 @@ export function MarketTable({
             {FILTERS.map((f) => (
               <button
                 key={f.key}
-                onClick={() => setFilter(f.key)}
+                onClick={() => {
+                  setFilter(f.key);
+                  setLimit(PAGE_SIZE);
+                }}
                 className={`rounded-md px-3.5 py-1.5 text-[13px] font-semibold ${
                   filter === f.key ? "bg-surface text-text shadow-sm" : "text-text-dim"
                 }`}
@@ -82,14 +96,20 @@ export function MarketTable({
         ) : (
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setLimit(PAGE_SIZE);
+            }}
             placeholder="Search coin or ticker"
             className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-accent sm:w-60"
           />
         )}
-        <span className="flex items-center gap-1.5 text-[12px] font-semibold text-text-faint">
-          <span className={`h-1.5 w-1.5 rounded-full ${live ? "bg-pos" : "bg-warn"}`} />
-          {live ? "Live" : "Reconnecting…"}
+        <span className="flex items-center gap-3 text-[12px] font-semibold text-text-faint">
+          <span>{matches.length} coins</span>
+          <span className="flex items-center gap-1.5">
+            <span className={`h-1.5 w-1.5 rounded-full ${live ? "bg-pos" : "bg-warn"}`} />
+            {live ? "Live" : "Reconnecting…"}
+          </span>
         </span>
       </div>
 
@@ -106,18 +126,21 @@ export function MarketTable({
           <tbody>
             {rows.map((t) => {
               const up = t.changePct >= 0;
+              const name = coinName(t.symbol);
               return (
                 <tr key={t.symbol} className="border-b border-border-soft last:border-none hover:bg-surface-2">
                   <td className="px-4 py-3">
                     <Link href={`/coin/${t.symbol}`} className="flex items-center gap-2.5">
                       <span
-                        className="flex h-[30px] w-[30px] items-center justify-center rounded-full font-display text-[10.5px] font-extrabold text-white"
-                        style={{ background: t.color }}
+                        className="flex h-[30px] w-[30px] flex-shrink-0 items-center justify-center rounded-full font-display text-[10px] font-extrabold text-white"
+                        style={{ background: coinColor(t.symbol) }}
                       >
                         {t.symbol.slice(0, 3)}
                       </span>
-                      <span className="text-[13.5px] font-bold text-text">{t.name}</span>
-                      <span className="font-mono text-[12px] text-text-faint">{t.symbol}</span>
+                      <span className="text-[13.5px] font-bold text-text">{name}</span>
+                      {name !== t.symbol ? (
+                        <span className="font-mono text-[12px] text-text-faint">{t.symbol}</span>
+                      ) : null}
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-[13.5px] tabular-nums text-text">
@@ -147,6 +170,17 @@ export function MarketTable({
           </tbody>
         </table>
       </div>
+
+      {matches.length > limit ? (
+        <div className="mt-4 flex justify-center">
+          <button
+            onClick={() => setLimit((l) => l + PAGE_SIZE)}
+            className="rounded-lg border border-border px-4 py-2 text-[13px] font-bold text-text hover:border-text-faint"
+          >
+            Show more ({matches.length - limit} remaining)
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

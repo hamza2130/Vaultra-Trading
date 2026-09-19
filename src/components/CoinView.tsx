@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { CandleChart } from "@/components/CandleChart";
 import {
   TIMEFRAMES,
+  coinColor,
+  coinName,
   formatPrice,
   formatVolume,
   type Candle,
@@ -59,11 +61,11 @@ export function CoinView({
         <div className="flex items-center gap-3">
           <span
             className="flex h-10 w-10 items-center justify-center rounded-full font-display text-sm font-extrabold text-white"
-            style={{ background: ticker.color }}
+            style={{ background: coinColor(ticker.symbol) }}
           >
             {ticker.symbol.slice(0, 3)}
           </span>
-          <h1 className="font-display text-[19px] font-extrabold text-text">{ticker.name}</h1>
+          <h1 className="font-display text-[19px] font-extrabold text-text">{coinName(ticker.symbol)}</h1>
           <span className="font-mono text-[13px] text-text-faint">{ticker.symbol} / USDT</span>
         </div>
         <div className="mt-3 flex flex-wrap items-baseline gap-3">
@@ -119,18 +121,6 @@ export function CoinView({
           timeframe={timeframe}
           initialCandles={initialCandles}
         />
-        <p className="mt-3 text-[11px] text-text-faint">
-          Prices from Binance public market data. Chart:{" "}
-          <a
-            href="https://www.tradingview.com/"
-            target="_blank"
-            rel="noreferrer"
-            className="underline hover:text-text-dim"
-          >
-            TradingView Lightweight Charts™
-          </a>{" "}
-          © 2025 TradingView, Inc.
-        </p>
       </div>
 
       <div className="mt-4 flex gap-2 rounded-lg bg-info-soft px-3.5 py-2.5 text-[12.5px] leading-relaxed text-info">
