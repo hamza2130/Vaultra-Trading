@@ -110,7 +110,8 @@ export interface Database {
           user_id: string;
           currency: string;
           amount: number;
-          address_id: string;
+          address_id: string | null;
+          address: string;
           status: WithdrawalStatus;
           admin_proof_storage_path: string | null;
           reject_reason: string | null;
@@ -123,7 +124,8 @@ export interface Database {
           user_id: string;
           currency: string;
           amount: number;
-          address_id: string;
+          address_id?: string | null;
+          address: string;
           status?: WithdrawalStatus;
           admin_proof_storage_path?: string | null;
           reject_reason?: string | null;
@@ -161,6 +163,17 @@ export interface Database {
       } & NoRelationships;
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      approve_deposit: { Args: { p_request: string; p_admin: string }; Returns: undefined };
+      reject_deposit: { Args: { p_request: string; p_admin: string }; Returns: undefined };
+      fulfill_withdrawal: {
+        Args: { p_request: string; p_admin: string; p_proof_path: string };
+        Returns: undefined;
+      };
+      reject_withdrawal: {
+        Args: { p_request: string; p_admin: string; p_reason: string };
+        Returns: undefined;
+      };
+    };
   };
 }

@@ -20,6 +20,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     .from("profiles")
     .select("id", { count: "exact", head: true })
     .eq("kyc_status", "pending");
+  const { count: pendingDeposits } = await supabase
+    .from("deposit_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending");
+  const { count: pendingWithdrawals } = await supabase
+    .from("withdrawal_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending");
 
   return (
     <div className="flex min-h-screen">
@@ -30,7 +38,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           </span>
           Vaultra <span className="text-[11px] font-semibold text-text-faint">ADMIN</span>
         </div>
-        <AdminSideNav pendingCount={pendingCount ?? 0} />
+        <AdminSideNav
+          pendingKyc={pendingCount ?? 0}
+          pendingRequests={(pendingDeposits ?? 0) + (pendingWithdrawals ?? 0)}
+        />
       </aside>
       <div className="flex-1">
         <div className="flex items-center justify-between border-b border-border bg-surface px-7 py-4">

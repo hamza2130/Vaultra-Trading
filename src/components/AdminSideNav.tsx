@@ -3,17 +3,25 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const LINKS = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/users", label: "Users" },
-];
-
-export function AdminSideNav({ pendingCount }: { pendingCount: number }) {
+export function AdminSideNav({
+  pendingKyc,
+  pendingRequests,
+}: {
+  pendingKyc: number;
+  pendingRequests: number;
+}) {
   const pathname = usePathname();
+
+  const links = [
+    { href: "/admin", label: "Dashboard", badge: 0 },
+    { href: "/admin/users", label: "Users", badge: pendingKyc },
+    { href: "/admin/requests", label: "Requests", badge: pendingRequests },
+    { href: "/admin/wallets", label: "Wallets", badge: 0 },
+  ];
 
   return (
     <nav className="flex flex-col gap-0.5">
-      {LINKS.map((link) => {
+      {links.map((link) => {
         const active = pathname === link.href;
         return (
           <Link
@@ -24,9 +32,9 @@ export function AdminSideNav({ pendingCount }: { pendingCount: number }) {
             }`}
           >
             {link.label}
-            {link.href === "/admin/users" && pendingCount > 0 ? (
+            {link.badge > 0 ? (
               <span className="rounded-full bg-warn-soft px-1.5 py-0.5 font-mono text-[11px] text-warn">
-                {pendingCount}
+                {link.badge}
               </span>
             ) : null}
           </Link>
