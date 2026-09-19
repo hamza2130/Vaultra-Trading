@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminDashboardPage() {
@@ -13,14 +14,17 @@ export default async function AdminDashboardPage() {
   return (
     <div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+        <Link
+          href="/admin/users"
+          className="rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-accent"
+        >
           <div className="text-[11.5px] font-bold uppercase tracking-wide text-text-dim">
             Pending KYC
           </div>
           <div className="mt-2 font-mono text-2xl font-bold tabular-nums text-text">
             {pendingCount ?? 0}
           </div>
-        </div>
+        </Link>
         <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <div className="text-[11.5px] font-bold uppercase tracking-wide text-text-dim">
             Total users
@@ -31,8 +35,7 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
       <p className="mt-6 text-[13px] text-text-dim">
-        User review, request queue, wallets, and the balance ledger land in the next build
-        phases.
+        Request queue, wallets, and the balance ledger land in the next build phases.
       </p>
     </div>
   );

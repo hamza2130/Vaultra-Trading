@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/auth-actions";
+import { AdminSideNav } from "@/components/AdminSideNav";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient();
@@ -15,6 +16,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     .single();
   if (profile?.role !== "admin") redirect("/");
 
+  const { count: pendingCount } = await supabase
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .eq("kyc_status", "pending");
+
   return (
     <div className="flex min-h-screen">
       <aside className="w-[230px] flex-shrink-0 border-r border-border bg-raised px-3.5 py-5">
@@ -24,11 +30,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           </span>
           Vaultra <span className="text-[11px] font-semibold text-text-faint">ADMIN</span>
         </div>
-        <nav className="flex flex-col gap-0.5">
-          <a href="/admin" className="rounded-lg bg-accent-soft px-3 py-2.5 text-[13.5px] font-semibold text-accent-ink">
-            Dashboard
-          </a>
-        </nav>
+        <AdminSideNav pendingCount={pendingCount ?? 0} />
       </aside>
       <div className="flex-1">
         <div className="flex items-center justify-between border-b border-border bg-surface px-7 py-4">
