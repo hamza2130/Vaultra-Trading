@@ -2,19 +2,29 @@
 
 import { useState, useTransition } from "react";
 import { Button, Card, ErrorNote, Modal, StatusPill } from "@/components/ui";
-import { approveKyc, getKycDocUrl, rejectKyc, restrictUser } from "./actions";
+import { approveKyc, getKycDocUrl, rejectKyc, restrictUser, unblockIp, unrestrictUser } from "./actions";
 
 type UserRow = {
   id: string;
   full_name: string;
   email: string;
   username: string;
+  role: string;
   kyc_status: string;
   created_at: string;
   doc_type: string | null;
 };
 
 type BlacklistRow = { email: string; reason: string | null; blacklisted_at: string };
+type BlockedIpRow = { ip: string; userName: string; reason: string | null; blockedAt: string };
+
+type Tab = "all" | "pending" | "blacklist" | "ips";
+const TAB_LABELS: Record<Tab, string> = {
+  all: "All users",
+  pending: "Pending review",
+  blacklist: "Blacklisted emails",
+  ips: "Blocked IPs",
+};
 
 function initials(name: string) {
   return name
@@ -25,8 +35,17 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-export function UsersClient({ users, blacklist }: { users: UserRow[]; blacklist: BlacklistRow[] }) {
-  const [tab, setTab] = useState<"all" | "pending" | "blacklist">("all");
+export function UsersClient({
+  users,
+  blacklist,
+  blockedIps,
+}: {
+  users: UserRow[];
+  blacklist: BlacklistRow[];
+  blockedIps: BlockedIpRow[];
+}) {
+  const [tab, setTab] = useState<Tab>("all");
+  const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [reviewing, setReviewing] = useState<UserRow | null>(null);
   const [docUrl, setDocUrl] = useState<string | null>(null);
   const [docError, setDocError] = useState<string | null>(null);
@@ -66,30 +85,76 @@ export function UsersClient({ users, blacklist }: { users: UserRow[]; blacklist:
     });
   }
 
-  function doRestrict(userId: string) {
+  function doRestrict(user: UserRow) {
+    if (!window.confirm(`Restrict ${user.full_name}? They'll be locked out and their known IP addresses blocked.`)) return;
+    setNotice(null);
     startTransition(async () => {
-      await restrictUser(userId);
+      const res = await restrictUser(user.id);
+      if (res.error) {
+        setNotice({ kind: "error", text: res.error });
+        return;
+      }
+      const skipped = res.skipped ? ` ${res.skipped} skipped (private, or shared with an admin).` : "";
+      setNotice({
+        kind: "ok",
+        text: `${user.full_name} restricted. ${res.blocked ?? 0} IP address${res.blocked === 1 ? "" : "es"} blocked.${skipped}`,
+      });
+    });
+  }
+
+  function doUnrestrict(user: UserRow) {
+    setNotice(null);
+    startTransition(async () => {
+      const res = await unrestrictUser(user.id);
+      setNotice(
+        res.error
+          ? { kind: "error", text: res.error }
+          : { kind: "ok", text: `${user.full_name} unrestricted; their blocked IPs were released.` },
+      );
+    });
+  }
+
+  function doUnblock(ip: string) {
+    setNotice(null);
+    startTransition(async () => {
+      const res = await unblockIp(ip);
+      setNotice(res.error ? { kind: "error", text: res.error } : { kind: "ok", text: `${ip} unblocked.` });
     });
   }
 
   return (
     <div>
       <div className="mb-5 flex gap-6 border-b border-border">
-        {(["all", "pending", "blacklist"] as const).map((t) => (
+        {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`relative pb-2.5 text-[13.5px] font-bold ${
+            className={`relative flex items-center gap-2 pb-2.5 text-[13.5px] font-bold ${
               tab === t ? "text-text" : "text-text-faint"
             }`}
           >
-            {t === "all" ? "All users" : t === "pending" ? "Pending review" : "Blacklisted emails"}
+            {TAB_LABELS[t]}
+            {t === "ips" && blockedIps.length > 0 ? (
+              <span className="rounded-full bg-neg-soft px-1.5 py-0.5 font-mono text-[11px] text-neg">
+                {blockedIps.length}
+              </span>
+            ) : null}
             {tab === t ? <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-accent" /> : null}
           </button>
         ))}
       </div>
 
-      {tab !== "blacklist" ? (
+      {notice ? (
+        <div
+          className={`mb-4 rounded-lg px-3.5 py-2.5 text-[13px] font-medium ${
+            notice.kind === "ok" ? "bg-pos-soft text-pos" : "bg-neg-soft text-neg"
+          }`}
+        >
+          {notice.text}
+        </div>
+      ) : null}
+
+      {tab === "all" || tab === "pending" ? (
         <div className="overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
           <table className="w-full border-collapse">
             <thead>
@@ -129,12 +194,18 @@ export function UsersClient({ users, blacklist }: { users: UserRow[]; blacklist:
                       <Button size="sm" variant="secondary" onClick={() => openReview(u)}>
                         Review
                       </Button>
+                    ) : u.role === "admin" ? (
+                      <span className="text-[12px] text-text-faint">Admin</span>
                     ) : u.kyc_status === "approved" ? (
-                      <Button size="sm" variant="danger" disabled={pending} onClick={() => doRestrict(u.id)}>
+                      <Button size="sm" variant="danger" disabled={pending} onClick={() => doRestrict(u)}>
                         Restrict
                       </Button>
+                    ) : u.kyc_status === "restricted" ? (
+                      <Button size="sm" variant="secondary" disabled={pending} onClick={() => doUnrestrict(u)}>
+                        Unrestrict
+                      </Button>
                     ) : (
-                      <span className="text-[12px] text-text-faint">Restricted</span>
+                      <span className="text-[12px] text-text-faint">—</span>
                     )}
                   </td>
                 </tr>
@@ -149,7 +220,7 @@ export function UsersClient({ users, blacklist }: { users: UserRow[]; blacklist:
             </tbody>
           </table>
         </div>
-      ) : (
+      ) : tab === "blacklist" ? (
         <Card>
           <h3 className="mb-1 font-display text-[15px] font-extrabold text-text">Blacklisted emails</h3>
           <p className="mb-4 text-[12.5px] text-text-dim">
@@ -164,6 +235,34 @@ export function UsersClient({ users, blacklist }: { users: UserRow[]; blacklist:
                 <div key={b.email} className="flex justify-between py-2.5 text-[12.5px]">
                   <span className="font-mono text-text">{b.email}</span>
                   <span className="text-text-faint">{b.reason}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      ) : (
+        <Card>
+          <h3 className="mb-1 font-display text-[15px] font-extrabold text-text">Blocked IP addresses</h3>
+          <p className="mb-4 text-[12.5px] text-text-dim">
+            Added when you restrict a user. Every request from these addresses is refused before any
+            page loads. It&apos;s a deterrent, not a guarantee: a VPN or a new network gets around it.
+          </p>
+          {blockedIps.length === 0 ? (
+            <p className="py-6 text-center text-[12.5px] text-text-faint">No blocked IP addresses.</p>
+          ) : (
+            <div className="divide-y divide-border-soft">
+              {blockedIps.map((b) => (
+                <div key={b.ip} className="flex items-center justify-between gap-3 py-2.5">
+                  <div>
+                    <div className="font-mono text-[13px] text-text">{b.ip}</div>
+                    <div className="text-[11.5px] text-text-faint">
+                      {b.userName} ·{" "}
+                      {new Date(b.blockedAt).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}
+                    </div>
+                  </div>
+                  <Button size="sm" variant="secondary" disabled={pending} onClick={() => doUnblock(b.ip)}>
+                    Unblock
+                  </Button>
                 </div>
               ))}
             </div>

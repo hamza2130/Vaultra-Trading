@@ -41,9 +41,6 @@ export default async function AdminDashboardPage() {
         <Tile label="Pending withdrawals" value={pendingWithdrawals} href="/admin/requests" />
         <Tile label="Total users" value={totalUsers} />
       </div>
-      <p className="mt-6 text-[13px] text-text-dim">
-        The balance ledger and full activity history land in the next build phase.
-      </p>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { getRequestIp } from "@/lib/client-ip";
+import { recordIp } from "@/lib/record-ip";
 import { createClient } from "@/lib/supabase/server";
 
 export async function loginUser(
@@ -15,10 +17,12 @@ export async function loginUser(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
     return { error: "Invalid email or password." };
   }
+
+  if (data.user) await recordIp(data.user.id, await getRequestIp());
 
   redirect("/");
 }

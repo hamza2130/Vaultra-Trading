@@ -1,6 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { getRequestIp } from "@/lib/client-ip";
+import { recordIp } from "@/lib/record-ip";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { DocType } from "@/lib/supabase/types";
@@ -77,6 +79,8 @@ export async function registerUser(
     await admin.auth.admin.deleteUser(userId);
     return { error: "Could not create profile: " + profileError.message };
   }
+
+  await recordIp(userId, await getRequestIp());
 
   const ext = doc.name.split(".").pop() ?? "bin";
   const storagePath = `${userId}/${crypto.randomUUID()}.${ext}`;

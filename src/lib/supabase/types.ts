@@ -156,6 +156,11 @@ export interface Database {
         };
         Update: Partial<Database["public"]["Tables"]["balance_ledger"]["Insert"]>;
       } & NoRelationships;
+      user_ips: {
+        Row: { user_id: string; ip: string; first_seen: string; last_seen: string };
+        Insert: { user_id: string; ip: string; first_seen?: string; last_seen?: string };
+        Update: Partial<Database["public"]["Tables"]["user_ips"]["Insert"]>;
+      } & NoRelationships;
       activity_log: {
         Row: { id: string; user_id: string | null; type: string; detail: string; status: string; created_at: string };
         Insert: { id?: string; user_id?: string | null; type: string; detail: string; status: string; created_at?: string };
@@ -172,6 +177,10 @@ export interface Database {
       };
       reject_withdrawal: {
         Args: { p_request: string; p_admin: string; p_reason: string };
+        Returns: undefined;
+      };
+      set_balance: {
+        Args: { p_user: string; p_new: number; p_note: string; p_admin: string };
         Returns: undefined;
       };
     };
