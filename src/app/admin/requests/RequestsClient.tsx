@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { Button, ErrorNote, Modal, StatusPill } from "@/components/ui";
+import { prepareUpload } from "@/lib/prepare-upload";
+import { MAX_UPLOAD_LABEL } from "@/lib/upload-limits";
 import { approveDeposit, fulfillWithdrawal, getProofUrl, rejectDeposit, rejectWithdrawal } from "./actions";
 
 export type QueueRow = {
@@ -40,6 +42,15 @@ export function RequestsClient({ deposits, withdrawals }: { deposits: QueueRow[]
     setReason("");
     setFile(null);
     setError(null);
+  }
+
+  async function chooseFile(chosen: File | undefined) {
+    setError(null);
+    setFile(null);
+    if (!chosen) return;
+    const result = await prepareUpload(chosen);
+    if (result.error || !result.file) setError(result.error ?? "Could not read that file.");
+    else setFile(result.file);
   }
 
   function viewProof(row: QueueRow) {
@@ -237,8 +248,8 @@ export function RequestsClient({ deposits, withdrawals }: { deposits: QueueRow[]
               </p>
               <label className="flex cursor-pointer flex-col items-center gap-1 rounded-lg border-[1.5px] border-dashed border-border px-4 py-6 text-center text-[12.5px] text-text-dim hover:border-accent hover:text-accent-ink">
                 <span className="font-semibold">{file ? `✓ ${file.name}` : "Click to upload payout screenshot"}</span>
-                <span className="text-[11.5px] text-text-faint">PNG, JPG, WebP or PDF · up to 6MB</span>
-                <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                <span className="text-[11.5px] text-text-faint">Photo or PDF · up to {MAX_UPLOAD_LABEL}</span>
+                <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => chooseFile(e.target.files?.[0])} />
               </label>
             </div>
           ) : null}

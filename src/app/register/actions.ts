@@ -6,6 +6,7 @@ import { recordIp } from "@/lib/record-ip";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { DocType } from "@/lib/supabase/types";
+import { uploadToBucket, validateProofFile } from "@/lib/uploads";
 
 const DOC_TYPES: DocType[] = ["national_id", "passport", "student_card"];
 
@@ -32,9 +33,8 @@ export async function registerUser(
   if (!(doc instanceof File) || doc.size === 0) {
     return { error: "Upload an ID document." };
   }
-  if (doc.size > 6 * 1024 * 1024) {
-    return { error: "Document must be smaller than 6MB." };
-  }
+  const fileError = validateProofFile(doc);
+  if (fileError) return { error: fileError };
 
   const admin = createAdminClient();
 
@@ -82,19 +82,17 @@ export async function registerUser(
 
   await recordIp(userId, await getRequestIp());
 
-  const ext = doc.name.split(".").pop() ?? "bin";
-  const storagePath = `${userId}/${crypto.randomUUID()}.${ext}`;
-  const { error: uploadError } = await admin.storage
-    .from("kyc-documents")
-    .upload(storagePath, doc, { contentType: doc.type });
-  if (uploadError) {
-    return { error: "Could not upload document: " + uploadError.message };
+  const upload = await uploadToBucket("kyc-documents", userId, doc);
+  if (upload.error || !upload.path) {
+    // Don't leave a half-registered account behind that would block a retry.
+    await admin.auth.admin.deleteUser(userId);
+    return { error: "Could not upload document: " + (upload.error ?? "unknown error") };
   }
 
   await admin.from("kyc_documents").insert({
     user_id: userId,
     doc_type: docType,
-    storage_path: storagePath,
+    storage_path: upload.path,
   });
 
   await admin.from("activity_log").insert({

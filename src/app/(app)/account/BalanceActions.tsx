@@ -3,6 +3,8 @@
 import QRCode from "qrcode";
 import { useEffect, useState, useTransition } from "react";
 import { Button, ErrorNote, Field, Modal, Select, TextInput } from "@/components/ui";
+import { prepareUpload } from "@/lib/prepare-upload";
+import { MAX_UPLOAD_LABEL } from "@/lib/upload-limits";
 import { submitDeposit, submitWithdrawal } from "./request-actions";
 
 type Wallet = { id: string; label: string; address: string };
@@ -45,6 +47,15 @@ function DepositModal({ wallet, onClose }: { wallet: Wallet | null; onClose: () 
     } catch {
       setError("Couldn't copy automatically — select the address and copy it manually.");
     }
+  }
+
+  async function chooseFile(chosen: File | undefined) {
+    setError(null);
+    setFile(null);
+    if (!chosen) return;
+    const result = await prepareUpload(chosen);
+    if (result.error || !result.file) setError(result.error ?? "Could not read that file.");
+    else setFile(result.file);
   }
 
   function next() {
@@ -153,8 +164,8 @@ function DepositModal({ wallet, onClose }: { wallet: Wallet | null; onClose: () 
               <p className="mb-2.5 text-[13px] text-text-dim">Upload a screenshot of the completed transfer as proof.</p>
               <label className="flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border-[1.5px] border-dashed border-border px-4 py-7 text-center text-[12.5px] text-text-dim hover:border-accent hover:text-accent-ink">
                 <span className="font-semibold">{file ? `✓ ${file.name}` : "Click to choose a screenshot"}</span>
-                <span className="text-[11.5px] text-text-faint">PNG, JPG, WebP or PDF · up to 6MB</span>
-                <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                <span className="text-[11.5px] text-text-faint">Photo or PDF · up to {MAX_UPLOAD_LABEL}</span>
+                <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => chooseFile(e.target.files?.[0])} />
               </label>
             </div>
           ) : null}
