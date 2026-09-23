@@ -166,6 +166,27 @@ export interface Database {
         Insert: { id?: string; user_id?: string | null; type: string; detail: string; status: string; created_at?: string };
         Update: Partial<Database["public"]["Tables"]["activity_log"]["Insert"]>;
       } & NoRelationships;
+      daily_pnl: {
+        Row: {
+          id: string;
+          user_id: string;
+          entry_date: string;
+          amount: number;
+          note: string | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          entry_date: string;
+          amount: number;
+          note?: string | null;
+          created_by: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["daily_pnl"]["Insert"]>;
+      } & NoRelationships;
     };
     Views: Record<string, never>;
     Functions: {

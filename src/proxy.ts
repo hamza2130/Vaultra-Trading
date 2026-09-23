@@ -4,6 +4,19 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const PUBLIC_PATHS = ["/login", "/register"];
 
+// Home, Markets, coin detail pages, and the market-data API they poll are
+// viewable by anyone, whatever their auth or KYC state — they're
+// reference-only market data, not account features. Everything else stays
+// gated below.
+function isPublicView(pathname: string): boolean {
+  return (
+    pathname === "/" ||
+    pathname === "/markets" ||
+    pathname.startsWith("/coin/") ||
+    pathname.startsWith("/api/market/")
+  );
+}
+
 function getClientIp(request: NextRequest): string {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0].trim();
@@ -58,6 +71,10 @@ export async function proxy(request: NextRequest) {
     const { data: userData } = await supabase.auth.getUser();
     const user = userData.user;
 
+    // Always viewable, regardless of auth/KYC state. getUser() above still
+    // ran, so a logged-in visitor's session cookie gets refreshed as normal.
+    if (isPublicView(pathname)) return response;
+
     if (!user) {
       if (isPublicPath) return response;
       return NextResponse.redirect(new URL("/login", request.url));
@@ -99,7 +116,7 @@ export async function proxy(request: NextRequest) {
     // Supabase unreachable (e.g. local dev before `supabase start`).
     // Public pages can still render; everything else needs a working
     // backend, so send it to /login rather than 500.
-    if (isPublicPath) return response;
+    if (isPublicPath || isPublicView(pathname)) return response;
     return NextResponse.redirect(new URL("/login", request.url));
   }
 }

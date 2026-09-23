@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { signOut } from "@/lib/auth-actions";
 
 const LINKS = [
-  { href: "/", label: "Home" },
   { href: "/markets", label: "Markets" },
   { href: "/account", label: "Account" },
 ];
@@ -22,12 +21,12 @@ export function AppNav({ displayName, isAdmin }: { displayName: string; isAdmin:
   return (
     <div className="sticky top-0 z-20 border-b border-border bg-raised">
       <div className="mx-auto flex h-[62px] max-w-[1240px] items-center gap-7 px-6">
-        <div className="flex items-center gap-2 font-display text-lg font-extrabold text-text">
+        <Link href="/" className="flex items-center gap-2 font-display text-lg font-extrabold text-text">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-accent-ink text-sm font-extrabold text-[#04140F]">
             V
           </span>
           Vaultra
-        </div>
+        </Link>
         <div className="flex flex-1 gap-1">
           {LINKS.map((link) => {
             const active = pathname === link.href;

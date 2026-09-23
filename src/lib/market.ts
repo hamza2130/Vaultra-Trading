@@ -71,11 +71,13 @@ export type Candle = {
   close: number;
 };
 
+// Binance caps klines at 1000 per request; these push each timeframe as
+// dense as that allows so charts don't look sparse on a wide screen.
 export const TIMEFRAMES = {
   "1H": { interval: "1m", limit: 60 },
-  "1D": { interval: "15m", limit: 96 },
-  "1W": { interval: "1h", limit: 168 },
-  "1M": { interval: "4h", limit: 180 },
+  "1D": { interval: "5m", limit: 288 },
+  "1W": { interval: "15m", limit: 672 },
+  "1M": { interval: "1h", limit: 720 },
   "1Y": { interval: "1d", limit: 365 },
 } as const;
 

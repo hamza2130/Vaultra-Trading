@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui";
 import { BalanceActions } from "./BalanceActions";
+import { PnlHistory, type PnlItem } from "./PnlHistory";
 import { ProfileForm } from "./ProfileForm";
 import { RequestHistory, type RequestItem } from "./RequestHistory";
 import { SavedAddresses } from "./SavedAddresses";
@@ -33,6 +34,19 @@ export default async function AccountPage() {
     .select("id, amount, currency, status, created_at, reject_reason, admin_proof_storage_path")
     .order("created_at", { ascending: false })
     .limit(10);
+  const { data: pnl } = await supabase
+    .from("daily_pnl")
+    .select("id, entry_date, amount, note")
+    .eq("user_id", userData.user!.id)
+    .order("entry_date", { ascending: false })
+    .limit(30);
+
+  const pnlItems: PnlItem[] = (pnl ?? []).map((p) => ({
+    id: p.id,
+    date: p.entry_date,
+    amount: Number(p.amount),
+    note: p.note,
+  }));
 
   const balance = Number(profile?.balance ?? 0);
   const reserved = (withdrawals ?? [])
@@ -91,6 +105,7 @@ export default async function AccountPage() {
           <RequestHistory items={items} />
         </div>
         <div className="flex flex-col gap-5">
+          <PnlHistory items={pnlItems} />
           <SavedAddresses addresses={addresses ?? []} />
           <ProfileForm
             fullName={profile?.full_name ?? ""}

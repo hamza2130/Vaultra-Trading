@@ -8,6 +8,7 @@ import { signedUrl, uploadToBucket, validateProofFile } from "@/lib/uploads";
 
 const CURRENCIES = ["USDT", "USDC"];
 const MAX_AMOUNT = 1_000_000;
+const MIN_DEPOSIT = 50;
 
 function parseAmount(raw: unknown): number | null {
   const s = String(raw ?? "").trim();
@@ -26,6 +27,7 @@ export async function submitDeposit(formData: FormData): Promise<{ error?: strin
 
   if (!CURRENCIES.includes(currency)) return { error: "Choose a currency." };
   if (amount === null) return { error: "Enter a valid amount (up to 2 decimals, max 1,000,000)." };
+  if (amount < MIN_DEPOSIT) return { error: `Minimum deposit is $${MIN_DEPOSIT}.` };
   const fileError = validateProofFile(proof);
   if (fileError) return { error: fileError };
 

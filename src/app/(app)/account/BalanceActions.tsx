@@ -11,6 +11,7 @@ type Wallet = { id: string; label: string; address: string };
 type SavedAddress = { id: string; label: string; address: string };
 
 const AMOUNT_RE = /^\d+(\.\d{1,2})?$/;
+const MIN_DEPOSIT = 50;
 
 function Steps({ total, current }: { total: number; current: number }) {
   return (
@@ -60,9 +61,16 @@ function DepositModal({ wallet, onClose }: { wallet: Wallet | null; onClose: () 
 
   function next() {
     setError(null);
-    if (step === 2 && !AMOUNT_RE.test(amount.trim())) {
-      setError("Enter the amount you sent (up to 2 decimals).");
-      return;
+    if (step === 2) {
+      const value = amount.trim();
+      if (!AMOUNT_RE.test(value)) {
+        setError("Enter the amount you sent (up to 2 decimals).");
+        return;
+      }
+      if (Number(value) < MIN_DEPOSIT) {
+        setError(`Minimum deposit is $${MIN_DEPOSIT}.`);
+        return;
+      }
     }
     setStep(step + 1);
   }
@@ -154,7 +162,7 @@ function DepositModal({ wallet, onClose }: { wallet: Wallet | null; onClose: () 
                   <option>USDC</option>
                 </Select>
               </Field>
-              <Field label="Amount you sent" hint="Must match the transfer in your screenshot.">
+              <Field label="Amount you sent" hint={`Must match the transfer in your screenshot. Minimum $${MIN_DEPOSIT}.`}>
                 <TextInput value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g. 250.00" inputMode="decimal" />
               </Field>
             </div>

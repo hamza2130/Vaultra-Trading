@@ -18,6 +18,7 @@ export function AdminSideNav({
     { href: "/admin/requests", label: "Requests", badge: pendingRequests },
     { href: "/admin/wallets", label: "Wallets", badge: 0 },
     { href: "/admin/ledger", label: "Balance ledger", badge: 0 },
+    { href: "/admin/pnl", label: "Daily PnL", badge: 0 },
     { href: "/admin/history", label: "History", badge: 0 },
   ];
 
